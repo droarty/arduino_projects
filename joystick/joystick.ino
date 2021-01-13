@@ -1,9 +1,9 @@
 /*
 * Arduino Wireless Communication Tutorial
 *     Example 1 - Transmitter Code
-*                
+*
 * by Dejan Nedelkovski, www.HowToMechatronics.com
-* 
+*
 * Library: TMRh20/RF24, https://github.com/tmrh20/RF24/
 */
 #include <SPI.h>
@@ -13,8 +13,9 @@
 RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
 
+// new comment
 const int analogPin5 = A5;
-const int analogPin6 = A6; 
+const int analogPin6 = A6;
 const int analogPin7 = A7;
 int button5 = 0;  // variable to store the value read
 int lastButton5 = 0;  // variable to store the value read
@@ -89,8 +90,8 @@ void loop() {
   Serial.print(sizeof(outputArray));
   Serial.print(":");
   Serial.println(outputStr);
-  
-  if (!radio.write(&outputArray, sizeof(outputArray))){  
+
+  if (!radio.write(&outputArray, sizeof(outputArray))){
     Serial.println("packet delivery failed");
   }
 }

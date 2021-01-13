@@ -9,6 +9,8 @@
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
+#include <printf.h>
+
 RF24 radio(8, 9); // CE, CSN
 const byte address[6] = "00001";
 
@@ -85,13 +87,13 @@ unsigned int distance [NUM_ANGLES];
 // sends the servo to the next angle. Call repeatedly once every 50 ms or so.
 void readNextDistance ()
 {
-static unsigned char angleIndex = 0;
-static signed char step = 1;
-distance [angleIndex ] = readDistance ();
-angleIndex += step ;
-if (angleIndex == NUM_ANGLES - 1) step = -1;
-else if (angleIndex == 0) step = 1;
-servo . write ( sensorAngle[angleIndex ] );
+  static unsigned char angleIndex = 0;
+  static signed char step = 1;
+  distance [angleIndex ] = readDistance ();
+  angleIndex += step ;
+  if (angleIndex == NUM_ANGLES - 1) step = -1;
+  else if (angleIndex == 0) step = 1;
+  servo . write ( sensorAngle[angleIndex ] );
 }
 
 
@@ -106,20 +108,24 @@ void run_autonomous() {
   readNextDistance ();
   // See if something is too close at any angle
   unsigned char tooClose = 0;
-  for (unsigned char i = 0 ; i < NUM_ANGLES ; i++)
-  if ( distance [ i ] < 300)
-  tooClose = 1;
+  for (unsigned char i = 0 ; i < NUM_ANGLES ; i++) {
+    Serial.print(distance[i]);
+    if ( distance [ i ] < 300)
+      tooClose = 1;
+  }
   if (tooClose) {
     // Something's nearby: back up left
     go(LEFT, -180);
     go(RIGHT, -80);
+    Serial.println("... backing up");
   } else {
     // Nothing in our way: go forward
     go(LEFT, 255);
     go(RIGHT, 255);
+    Serial.println("... going forward");
   }
-  // Check the next direction in 50 ms
-  delay (50);
+  // Check the next direction in 25 ms
+  delay (25);
 }
 
 // Initial configuration
@@ -148,11 +154,15 @@ void setup () {
   // Scan the surroundings before starting
   servo . write ( sensorAngle[0] );
   delay (200);
-  for (unsigned char i = 0 ; i < NUM_ANGLES ; i ++)
-  readNextDistance (), delay (200);
+  for (unsigned char i = 0 ; i < NUM_ANGLES ; i ++){
+    readNextDistance ();
+    delay (200);
+  }
   
   // set up wireless
   Serial.begin(9600);
+  Serial.println("Setup ***********");
+  pinMode(10, OUTPUT);// use pin 10 for uno and nano use 53 for mega
   radio.begin();
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_MIN);
@@ -164,7 +174,10 @@ void setup () {
     Serial.println("not connected ...");
   }
 
-  Serial.println("setup done...");
+  printf_begin();
+  Serial.println(F("details::"));
+  radio.printDetails();
+  Serial.println("..................");
 }
 
 
@@ -172,12 +185,12 @@ void setup () {
 // Main loop:
 //
 void loop () {
-  if (radio.isChipConnected()) {
-    Serial.println("is Connected ****");
-  }
-  else {
-    Serial.println("not connected ...");
-  }
+//  if (radio.isChipConnected()) {
+//    Serial.print("is Connected ++++");
+//  }
+//  else {
+//    Serial.print("not connected ----");
+//  }
 
   if (radio.available()) {
     Serial.print(".");
@@ -188,20 +201,26 @@ void loop () {
     int leftMotorSpeed = motorSpeed + buttonState * spinSpeed;
     int rightMotorSpeed = motorSpeed - buttonState * spinSpeed;
     buttonState = inputArray[2];
-    Serial.print(leftMotorSpeed);
-    Serial.print(":");
-    Serial.print(rightMotorSpeed);
-    Serial.print(":");
-    Serial.print(buttonState);
-    Serial.println();
-    go(RIGHT, rightMotorSpeed);
-    go(LEFT , leftMotorSpeed);
+    if(buttonState == 0) {
+      Serial.print(leftMotorSpeed);
+      Serial.print(":");
+      Serial.print(rightMotorSpeed);
+      Serial.print(":");
+      Serial.print(buttonState);
+      Serial.println();
+      go(RIGHT, rightMotorSpeed);
+      go(LEFT , leftMotorSpeed);
+    }
+    else {
+      run_autonomous();
+    }
   }
   else {
 //    go(RIGHT, 0);
 //    go(LEFT, 0);
   }
   delay (200);
+  Serial.println(">");
 }
 
 
